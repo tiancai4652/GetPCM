@@ -31,6 +31,14 @@ namespace GetPCM
             SetPCMToWAV(tempPCMFile, (int)samplesPerSec, bitsPerSample, channels, wavFile2);
         }
 
+        /// <summary>
+        /// GetPCMFromWAV
+        /// </summary>
+        /// <param name="wavFile">wavFile</param>
+        /// <param name="pcmFile">pcmFile</param>
+        /// <param name="samplesPerSec">采样率</param>
+        /// <param name="bitsPerSample">采样深度</param>
+        /// <param name="channels">通道数</param>
         public static void GetPCMFromWAV(string wavFile, string pcmFile,out UInt32 samplesPerSec,out UInt16 bitsPerSample,out UInt16 channels)
         {
             using (FileStream stream = new FileStream(wavFile, FileMode.OpenOrCreate))
@@ -86,6 +94,108 @@ namespace GetPCM
             }
         }
 
+        /// <summary>
+        /// SetPCMToWAV
+        /// </summary>
+        /// <param name="pcmFile">pcmFile</param>
+        /// <param name="sampleRate">采样率</param>
+        /// <param name="bits">采样深度</param>
+        /// <param name="channelsCount">通道数</param>
+        /// <param name="wavFile">wavFile</param>
+        public static void SetPCMToWAV(string pcmFile, int sampleRate, int bits, int channelsCount, string wavFile)
+        {
+            using (FileStream stream = new FileStream(pcmFile, FileMode.OpenOrCreate))
+            {
+                using (BinaryReader reader = new BinaryReader(stream, System.Text.Encoding.ASCII))
+                {
+                    List<byte> pcmData = new List<byte>();
+                    try
+                    {
+                        while (true)
+                        {
+                            pcmData.Add(reader.ReadByte());
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+
+                    }
+
+                    //内容为"RIFF"
+                    string chunkId = "RIFF";
+                    //存储文件的字节数（不包含ChunkID和ChunkSize这8个字节）
+                    UInt32 chunkSize = (UInt32)pcmData.Count + 44 - 8;
+                    //内容为"WAVE"
+                    string riffType = "WAVE";
+                    //内容为"fmt"
+                    string fmtId = "fmt ";
+                    //存储该子块的字节数（不含前面的Subchunk1ID和Subchunk1Size这8个字节）
+                    UInt32 fmtSize = 16;
+                    //存储音频文件的编码格式，例如若为PCM则其存储值为1，若为其他非PCM格式的则有一定的压缩。
+                    UInt16 formatTag = 1;
+                    //通道数，单通道(Mono)值为1，双通道(Stereo)值为2，等等
+                    UInt16 channels = (UInt16)channelsCount;
+                    //采样率，如8k，44.1k等
+                    UInt32 samplesPerSec = (UInt32)sampleRate;
+                    //每秒存储的bit数，其值=SampleRate * NumChannels * BitsPerSample/8
+                    /// 每样本的数据位数，表示每个声道中各个样本的数据位数。如果有多个声道，对每个声道而言，样本大小都一样。
+                    UInt32 avgBytesPerSec = (UInt32)(sampleRate * /*channelsCount **/ bits / 8);
+                    //块对齐大小，其值=NumChannels * BitsPerSample/8
+                    UInt16 blockAlign = (UInt16)(channelsCount * bits / 8);
+                    //每个采样点的bit数，一般为8,16,32等。
+                    UInt16 bitsPerSample = (UInt16)bits;
+                    //内容为“data”
+                    string dataID = "data";
+                    //内容为接下来的正式的数据部分的字节数，其值=NumSamples * NumChannels * BitsPerSample/8
+                    UInt32 dataSize = (UInt32)pcmData.Count;
+
+                    if (chunkId != "RIFF" || riffType != "WAVE" || fmtId != "fmt " || dataID != "data" || fmtSize != 16)
+                    {
+                        Console.WriteLine("Malformed WAV header");
+                        MessageBox.Show("Malformed WAV header");
+                        return;
+                    }
+
+                    List<byte> result = new List<byte>();
+                    result.AddRange(System.Text.Encoding.ASCII.GetBytes(chunkId));
+                    result.AddRange(BitConverter.GetBytes(chunkSize));
+                    result.AddRange(System.Text.Encoding.ASCII.GetBytes(riffType));
+                    result.AddRange(System.Text.Encoding.ASCII.GetBytes(fmtId));
+                    result.AddRange(BitConverter.GetBytes(fmtSize));
+                    result.AddRange(BitConverter.GetBytes(formatTag));
+                    result.AddRange(BitConverter.GetBytes(channels));
+                    result.AddRange(BitConverter.GetBytes(samplesPerSec));
+                    result.AddRange(BitConverter.GetBytes(avgBytesPerSec));
+                    result.AddRange(BitConverter.GetBytes(blockAlign));
+                    result.AddRange(BitConverter.GetBytes(bitsPerSample));
+                    result.AddRange(System.Text.Encoding.ASCII.GetBytes(dataID));
+                    result.AddRange(BitConverter.GetBytes(dataSize));
+                    result.AddRange(pcmData);
+
+                    Stream streamByte = new MemoryStream(result.ToArray());
+
+                    using (var fileStream = File.Create(wavFile))
+                    {
+                        streamByte.Seek(0, SeekOrigin.Begin);
+                        streamByte.CopyTo(fileStream);
+                    }
+                }
+
+            }
+
+
+        }
+        /// <summary>
+        /// SetRGBToBMP
+        /// </summary>
+        /// <param name="rgbFile">rgbFile</param>
+        /// <param name="bmpFile">bmpFile</param>
+        /// <param name="biWidth">图像宽度（以像素为单位）</param>
+        /// <param name="biHeight">图像高度，+：图像存储顺序为Bottom2Top，-：Top2Bottom</param>
+        /// <param name="biBitCount">图像像素位数</param>
+        /// <param name="biCompression">压缩方式，0：不压缩，1：RLE8，2：RLE4</param>
+        /// <param name="biXPelsPerMeter">用象素/米表示的水平分辨率</param>
+        /// <param name="biYPelsPerMeter">用象素/米表示的垂直分辨率</param>
         public static void SetRGBToBMP(string rgbFile, string bmpFile, UInt32 biWidth, UInt32 biHeight, UInt16 biBitCount, UInt32 biCompression
           , UInt32 biXPelsPerMeter, UInt32 biYPelsPerMeter)
         {
@@ -190,6 +300,17 @@ namespace GetPCM
             }
         }
 
+        /// <summary>
+        /// GetRGBFromBMP
+        /// </summary>
+        /// <param name="bmpFile">bmpFile</param>
+        /// <param name="rgbFile">rgbFile</param>
+        /// <param name="biWidth">图像宽度（以像素为单位）</param>
+        /// <param name="biHeight">图像高度，+：图像存储顺序为Bottom2Top，-：Top2Bottom</param>
+        /// <param name="biBitCount">图像像素位数</param>
+        /// <param name="biCompression">压缩方式，0：不压缩，1：RLE8，2：RLE4</param>
+        /// <param name="biXPelsPerMeter">用象素/米表示的水平分辨率</param>
+        /// <param name="biYPelsPerMeter">用象素/米表示的垂直分辨率</param>
         public static void GetRGBFromBMP(string bmpFile, string rgbFile, out UInt32 biWidth,out UInt32 biHeight, out UInt16 biBitCount,out UInt32 biCompression
              ,out UInt32 biXPelsPerMeter,out UInt32 biYPelsPerMeter)
         {
@@ -284,88 +405,6 @@ namespace GetPCM
             }
         }
 
-        public static void SetPCMToWAV(string pcmFile, int sampleRate, int bits, int channelsCount, string wavFile)
-        {
-            using (FileStream stream = new FileStream(pcmFile, FileMode.OpenOrCreate))
-            {
-                using (BinaryReader reader = new BinaryReader(stream, System.Text.Encoding.ASCII))
-                {
-                    List<byte> pcmData = new List<byte>();
-                    try
-                    {
-                        while (true)
-                        {
-                            pcmData.Add(reader.ReadByte());
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-
-                    }
-
-                    //内容为"RIFF"
-                    string chunkId = "RIFF";
-                    //存储文件的字节数（不包含ChunkID和ChunkSize这8个字节）
-                    UInt32 chunkSize = (UInt32)pcmData.Count + 44 - 8;
-                    //内容为"WAVE"
-                    string riffType = "WAVE";
-                    //内容为"fmt"
-                    string fmtId = "fmt ";
-                    //存储该子块的字节数（不含前面的Subchunk1ID和Subchunk1Size这8个字节）
-                    UInt32 fmtSize = 16;
-                    //存储音频文件的编码格式，例如若为PCM则其存储值为1，若为其他非PCM格式的则有一定的压缩。
-                    UInt16 formatTag = 1;
-                    //通道数，单通道(Mono)值为1，双通道(Stereo)值为2，等等
-                    UInt16 channels = (UInt16)channelsCount;
-                    //采样率，如8k，44.1k等
-                    UInt32 samplesPerSec = (UInt32)sampleRate;
-                    //每秒存储的bit数，其值=SampleRate * NumChannels * BitsPerSample/8
-                    /// 每样本的数据位数，表示每个声道中各个样本的数据位数。如果有多个声道，对每个声道而言，样本大小都一样。
-                    UInt32 avgBytesPerSec = (UInt32)(sampleRate * /*channelsCount **/ bits / 8);
-                    //块对齐大小，其值=NumChannels * BitsPerSample/8
-                    UInt16 blockAlign = (UInt16)(channelsCount * bits / 8);
-                    //每个采样点的bit数，一般为8,16,32等。
-                    UInt16 bitsPerSample = (UInt16)bits;
-                    //内容为“data”
-                    string dataID = "data";
-                    //内容为接下来的正式的数据部分的字节数，其值=NumSamples * NumChannels * BitsPerSample/8
-                    UInt32 dataSize = (UInt32)pcmData.Count;
-
-                    if (chunkId != "RIFF" || riffType != "WAVE" || fmtId != "fmt " || dataID != "data" || fmtSize != 16)
-                    {
-                        Console.WriteLine("Malformed WAV header");
-                        MessageBox.Show("Malformed WAV header");
-                        return;
-                    }
-
-                    List<byte> result = new List<byte>();
-                    result.AddRange(System.Text.Encoding.ASCII.GetBytes(chunkId));
-                    result.AddRange(BitConverter.GetBytes(chunkSize));
-                    result.AddRange(System.Text.Encoding.ASCII.GetBytes(riffType));
-                    result.AddRange(System.Text.Encoding.ASCII.GetBytes(fmtId));
-                    result.AddRange(BitConverter.GetBytes(fmtSize));
-                    result.AddRange(BitConverter.GetBytes(formatTag));
-                    result.AddRange(BitConverter.GetBytes(channels));
-                    result.AddRange(BitConverter.GetBytes(samplesPerSec));
-                    result.AddRange(BitConverter.GetBytes(avgBytesPerSec));
-                    result.AddRange(BitConverter.GetBytes(blockAlign));
-                    result.AddRange(BitConverter.GetBytes(bitsPerSample));
-                    result.AddRange(System.Text.Encoding.ASCII.GetBytes(dataID));
-                    result.AddRange(BitConverter.GetBytes(dataSize));
-                    result.AddRange(pcmData);
-
-                    Stream streamByte = new MemoryStream(result.ToArray());
-
-                    using (var fileStream = File.Create(wavFile))
-                    {
-                        streamByte.Seek(0, SeekOrigin.Begin);
-                        streamByte.CopyTo(fileStream);
-                    }
-                }
-
-            }
-
-
-        }
+     
     }
 }

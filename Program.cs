@@ -284,7 +284,6 @@ namespace GetPCM
             }
         }
 
-      
         public static void SetPCMToWAV(string pcmFile, int sampleRate, int bits, int channelsCount, string wavFile)
         {
             using (FileStream stream = new FileStream(pcmFile, FileMode.OpenOrCreate))

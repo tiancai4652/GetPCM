@@ -13,7 +13,7 @@ namespace GetPCM
         static void Main(string[] args)
         {
             string rgb2 = @"C:\Users\Sam\Desktop\95_84_24.rgb";
-            string bmp = @"C:\Users\Sam\Desktop\无标题.bmp";
+            string bmp = @"C:\Users\Sam\Desktop\1.bmp";
             string rgb = @"C:\Users\Sam\Desktop\1.rgb";
             string bmp2 = @"C:\Users\Sam\Desktop\x1.bmp";
 
@@ -201,11 +201,9 @@ namespace GetPCM
                     result.AddRange(BitConverter.GetBytes(biWidth));
                     result.AddRange(BitConverter.GetBytes(biHeight));
                     result.AddRange(BitConverter.GetBytes(biPlanes));
-
                     result.AddRange(BitConverter.GetBytes(biBitCount));
                     result.AddRange(BitConverter.GetBytes(biCompression));
                     result.AddRange(BitConverter.GetBytes(biSizeImage));
-                    result.AddRange(BitConverter.GetBytes(biPlanes));
                     result.AddRange(BitConverter.GetBytes(biXPelsPerMeter));
                     result.AddRange(BitConverter.GetBytes(biYPelsPerMeter));
                     result.AddRange(BitConverter.GetBytes(biClrUsed));

@@ -16,17 +16,12 @@ namespace GetPCM
             string bmp = @"C:\Users\Sam\Desktop\1.bmp";
             string rgb = @"C:\Users\Sam\Desktop\1.rgb";
             string bmp2 = @"C:\Users\Sam\Desktop\x1.bmp";
-
             string bmp3 = @"C:\Users\Sam\Desktop\res\95_84_32.bmp";
-
-
 
             GetRGBFromBMP(bmp, rgb, out UInt32 biWidth, out UInt32 biHeight, out UInt16 biBitCount, out UInt32 biCompression
              , out UInt32 biXPelsPerMeter, out UInt32 biYPelsPerMeter);
-
             SetRGBToBMP(rgb, bmp2, biWidth, biHeight, biBitCount, biCompression
              , biXPelsPerMeter, biYPelsPerMeter);
-
 
             string wavFile = @"C:\Users\Sam\Desktop\月亮代表我的心-黄红英.wav";
             string tempPCMFile = @"C:\Users\Sam\Desktop\x1.pcm";
@@ -34,9 +29,6 @@ namespace GetPCM
 
             GetPCMFromWAV(wavFile, tempPCMFile, out UInt32 samplesPerSec, out UInt16 bitsPerSample, out UInt16 channels);
             SetPCMToWAV(tempPCMFile, (int)samplesPerSec, bitsPerSample, channels, wavFile2);
-
-
-
         }
 
         public static void GetPCMFromWAV(string wavFile, string pcmFile,out UInt32 samplesPerSec,out UInt16 bitsPerSample,out UInt16 channels)
@@ -72,43 +64,25 @@ namespace GetPCM
                     ////内容为接下来的正式的数据部分的字节数，其值=NumSamples * NumChannels * BitsPerSample/8
                     UInt32 dataSize = reader.ReadUInt32();
 
-                    //try
-                    //{
-                    //    UInt32 other = reader.ReadUInt32();
-                    //}
-                    //catch(Exception ex)
-                    //{ }
-
                     if (chunkId != "RIFF" || riffType != "WAVE" || fmtId != "fmt " || dataID != "data" || fmtSize != 16)
                     {
                         //Console.WriteLine("Malformed WAV header");
                         MessageBox.Show("Malformed WAV header");
                         return;
                     }
-
-                    //if (channels != 1 || samplesPerSec != 11025 || avgBytesPerSec != 22050 || blockAlign != 2 || bitsPerSample != 16 || formatTag != 1 || chunkSize < 48)
-                    //{
-                    //    Console.WriteLine("Unexpected WAV format, need 11025 Hz mono 16 bit (little endian integers)");
-                    //    return;
-                    //}
-
-                    //uint numberOfsamples = Math.Min(dataSize / 2, 330750); // max 30 seconds
                     uint numberOfsamples = dataSize;
                     var pcmData = new byte[numberOfsamples];
                     for (int i = 0; i < numberOfsamples; i++)
                     {
                         pcmData[i] = reader.ReadByte();
                     }
-
                     Stream streamByte = new MemoryStream(pcmData);
-
                     using (var fileStream = File.Create(pcmFile))
                     {
                         streamByte.Seek(0, SeekOrigin.Begin);
                         streamByte.CopyTo(fileStream);
                     }
                 }
-
             }
         }
 
@@ -128,9 +102,7 @@ namespace GetPCM
                         }
                     }
                     catch (Exception ex)
-                    {
-
-                    }
+                    {}
 
                     #region  位图文件头(bmp file header)：  提供文件的格式、大小等信息
                     //2Bytes，必须为"BM"，即0x424D 才是Windows位图文件
@@ -185,10 +157,7 @@ namespace GetPCM
                         MessageBox.Show("error:biBitCount == 1 || biBitCount == 4 || biBitCount == 8");
                         return;
                     }
-
                     #endregion
-
-
 
                     List<byte> result = new List<byte>();
                     result.AddRange(System.Text.Encoding.ASCII.GetBytes(bfType));
@@ -218,10 +187,7 @@ namespace GetPCM
                         streamByte.CopyTo(fileStream);
                     }
                 }
-
             }
-
-
         }
 
         public static void GetRGBFromBMP(string bmpFile, string rgbFile, out UInt32 biWidth,out UInt32 biHeight, out UInt16 biBitCount,out UInt32 biCompression
@@ -291,8 +257,6 @@ namespace GetPCM
                     //当biBitCount = 8时，1个像素占1个字节;
                     //当biBitCount = 24时,1个像素占3个字节;
 
-
-
                     //Windows规定一个扫描行所占的字节数必须是4的倍数(即以long为单位),不足的以0填充，
                     //DataSizePerLine = (biWidth * biBitCount + 31) / 8;
                     //DataSizePerLine = DataSizePerLine / 4 * 4;
@@ -303,85 +267,18 @@ namespace GetPCM
                     }
                     var dataSize = dataSizePerLine * biHeight;
 
-
                     #endregion
-             
                     var dataBytes = new byte[dataSize];
                     for (int i = 0; i < dataSize; i++)
                     {
                         dataBytes[i] = reader.ReadByte();
                     }
-
                     Stream streamByte = new MemoryStream(dataBytes);
-
                     using (var fileStream = File.Create(rgbFile))
                     {
                         streamByte.Seek(0, SeekOrigin.Begin);
                         streamByte.CopyTo(fileStream);
                     }
-
-                    ////内容为"RIFF"
-                    //string chunkId = new string(reader.ReadChars(4));
-                    ////存储文件的字节数（不包含ChunkID和ChunkSize这8个字节）
-                    //UInt32 chunkSize = reader.ReadUInt32();
-                    ////内容为"WAVE"
-                    //string riffType = new string(reader.ReadChars(4));
-                    ////内容为"fmt"
-                    //string fmtId = new string(reader.ReadChars(4));
-                    ////存储该子块的字节数（不含前面的Subchunk1ID和Subchunk1Size这8个字节）
-                    //UInt32 fmtSize = reader.ReadUInt32();
-                    //////存储音频文件的编码格式，例如若为PCM则其存储值为1，若为其他非PCM格式的则有一定的压缩。
-                    //UInt16 formatTag = reader.ReadUInt16();
-                    //////通道数，单通道(Mono)值为1，双通道(Stereo)值为2，等等
-                    //channels = reader.ReadUInt16();
-                    //////采样率，如8k，44.1k等
-                    //samplesPerSec = reader.ReadUInt32();
-                    //////每秒存储的bit数，其值=SampleRate * NumChannels * BitsPerSample/8
-                    //UInt32 avgBytesPerSec = reader.ReadUInt32();
-                    //////块对齐大小，其值=NumChannels * BitsPerSample/8
-                    //UInt16 blockAlign = reader.ReadUInt16();
-                    //////每个采样点的bit数，一般为8,16,32等。
-                    //bitsPerSample = reader.ReadUInt16();
-                    ////内容为“data”
-                    //string dataID = new string(reader.ReadChars(4));
-                    //////内容为接下来的正式的数据部分的字节数，其值=NumSamples * NumChannels * BitsPerSample/8
-                    //UInt32 dataSize = reader.ReadUInt32();
-
-                    //try
-                    //{
-                    //    UInt32 other = reader.ReadUInt32();
-                    //}
-                    //catch(Exception ex)
-                    //{ }
-
-                    //    if (chunkId != "RIFF" || riffType != "WAVE" || fmtId != "fmt " || dataID != "data" || fmtSize != 16)
-                    //    {
-                    //        //Console.WriteLine("Malformed WAV header");
-                    //        MessageBox.Show("Malformed WAV header");
-                    //        return;
-                    //    }
-
-                    //    //if (channels != 1 || samplesPerSec != 11025 || avgBytesPerSec != 22050 || blockAlign != 2 || bitsPerSample != 16 || formatTag != 1 || chunkSize < 48)
-                    //    //{
-                    //    //    Console.WriteLine("Unexpected WAV format, need 11025 Hz mono 16 bit (little endian integers)");
-                    //    //    return;
-                    //    //}
-
-                    //    //uint numberOfsamples = Math.Min(dataSize / 2, 330750); // max 30 seconds
-                    //    uint numberOfsamples = dataSize;
-                    //    var pcmData = new byte[numberOfsamples];
-                    //    for (int i = 0; i < numberOfsamples; i++)
-                    //    {
-                    //        pcmData[i] = reader.ReadByte();
-                    //    }
-
-                    //    Stream streamByte = new MemoryStream(pcmData);
-
-                    //    using (var fileStream = File.Create(pcmFile))
-                    //    {
-                    //        streamByte.Seek(0, SeekOrigin.Begin);
-                    //        streamByte.CopyTo(fileStream);
-                    //    }
                 }
 
             }
@@ -406,7 +303,6 @@ namespace GetPCM
                     {
 
                     }
-
 
                     //内容为"RIFF"
                     string chunkId = "RIFF";
